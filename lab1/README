@@ -1,0 +1,6 @@
+Jun Zhou
+ID 804179311
+
+My shell supports the features in the spec, to the best of my understanding of the spec.
+
+Known limitations: My code uses the getopt_long default for dealing with missing args to options, which may or may not be what the spec intended.

@@ -1,0 +1,416 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0062)http://web.cs.ucla.edu/classes/winter16/cs111/assign/lab1.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>Lab 1. Simpleton shell</title>
+<link rel="copyright" href="http://web.cs.ucla.edu/classes/winter16/cs111/copyright.html">
+<link rev="made" href="mailto:eggert@cs.ucla.edu">
+<style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+.en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+}
+
+.en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+}
+</style></head>
+
+<body>
+
+<h1>Lab 1. Simpleton shell</h1>
+
+<p><small>[<a href="http://web.cs.ucla.edu/classes/winter16/cs111/index.html">111 home</a> &gt; <a href="http://web.cs.ucla.edu/classes/winter16/cs111/syllabus.html">syllabus</a>]</small></p>
+
+<h2>Introduction</h2>
+
+<p>You are a programmer for Big Data Systems, Inc., a company that
+specializes in large backend systems that analyze
+<a href="https://en.wikipedia.org/wiki/Big_data">big data</a>. Much of
+BDSI's computation occurs in a cloud or a grid. Computational nodes are cheap
+<a href="https://en.wikipedia.org/wiki/Symmetric_multiprocessing">SMP</a>
+hosts with a relatively small number of processors. Nodes typically
+run simple shell scripts as part of the larger computation, and you've
+been assigned the job of improving the infrastructure for these
+scripts.</p>
+
+<p>Many of the shell scripts have command sequences that look like the
+following (though the actual commands tend to be more proprietary):</p>
+
+<pre><code>(sort &lt; a | cat b - | tr A-Z a-z &gt; c) 2&gt;&gt; d
+</code></pre>
+
+<p>This command invokes three subcommands. The first runs the
+command <samp>sort</samp> with standard input being the
+file <samp>a</samp> and standard output being a unnamed pipe 1.  The
+second runs the command <samp>cat b -</samp> with standard input being
+pipe 1 and standard output being pipe 2. The third runs the
+command <samp>tr A-Z a-z</samp> with standard input being pipe 2 and
+standard output being the file <samp>c</samp>. All three commands have
+standard error sent, via the same file descriptor, to
+file <samp>d</samp> in append-only mode.</p>
+
+<p>BDSI's developers have several complaints about these shell scripts:</p>
+
+<ul>
+  <li>The shell script syntax does not let them open files with
+    special flags available at the system call level. For example,
+    there is no way to open a file with the <samp>O_DSYNC</samp> flag
+    of
+    the <samp><a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html">open</a></samp>
+    system call.</li>
+
+  <li>The developers want to be able to create arbitrary directed graphs
+    of processes connected via pipes, but the shell syntax forces them
+    into pipelines.</li>
+
+  <li>The developers want a simpler way to invoke the shell, one that
+    is more easily generated from their programs and scripts, one that
+    does not require that they write a shell script. They do not mind
+    if the simpler shell is harder for humans to use, because it's
+    not intended to be used directly by programmers.</li>
+</ul>
+
+<h2>Basic idea</h2>
+
+<p>To address these issues, your boss proposes a new
+program <samp>simpsh</samp>, short for "SIMPleton SHell", a very simple,
+stripped down shell. <samp>simpsh</samp> does not use a scripting
+language at all, and you do not interact with it at a terminal or give
+it a script to run. Instead, developers invoke the <samp>simpsh</samp>
+command by passing it arguments telling it which files to access,
+which pipes to create, and which subcommands to invoke. It then
+creates or accesses all the files and creates all the pipes processes
+needed to run the subcommands, and reports the processes's exit
+statuses as they exit.</p>
+
+<p>For example, the abovementioned command in the standard shell could
+  be run using the following <samp>simpsh</samp> command. This invocation
+  uses standard shell syntax, because it is invoking <samp>simpsh</samp> from
+  the standard shell; the command itself, though, is just an array of strings
+  and <samp>simpsh</samp> interprets this array and executes the same three
+  subcommands that the abovementioned shell command does.</p>
+
+<pre><code>simpsh \
+  --rdonly a \
+  --pipe \
+  --pipe \
+  --creat --trunc --wronly c \
+  --creat --append --wronly d \
+  --command 3 5 6 tr A-Z a-z \
+  --command 0 2 6 sort \
+  --command 1 4 6 cat b - \
+  --wait
+</code></pre>
+
+<p>This example invocation creates seven file descriptors:</p>
+<ol start="0">
+  <li>A read only descriptor for the file <samp>a</samp>, created by the <samp>--rdonly</samp> option.</li>
+  <li>The read end of the first pipe, created by the first <samp>--pipe</samp> option.</li>
+  <li>The write end of the first pipe, also created by the first <samp>--pipe</samp> option.</li>
+  <li>The read end of the second pipe, created by the second <samp>--pipe</samp> option.</li>
+  <li>The write end of the second pipe, also created by the second <samp>--pipe</samp> option.</li>
+  <li>A write only descriptor for the file <samp>c</samp>, created by the first <samp>--wronly</samp> option as modified by the preceding <samp>--creat</samp> and <samp>--trunc</samp>.</li>
+  <li>A write only, append only descriptor for the
+  file <samp>d</samp>, created by the <samp>--wronly</samp>
+  option as modified by the preceding <samp>--creat</samp> and <samp>--append</samp> options.</li>
+</ol>
+
+<p> It then creates three subprocesses:</p>
+<ul>
+  <li>A subprocess with standard input, standard output, and standard
+  error being the file descriptors numbered 0, 2, and 6 above,
+  respectively. This subprocess runs the command <samp>sort</samp>
+  with no arguments</li>
+  <li>A subprocess with standard input, output, and error being the file
+  descriptors numbered 1, 3, and 6. This subprocess runs the
+  command <samp>cat</samp> with the two arguments <samp>b</samp>
+  and <samp>-</samp>.</li>
+  <li>A subprocess with standard, standard, and error being the file
+  descriptors numberd 4, 5, and 6 above. This subprocess runs the
+  command <samp>tr</samp> with the two arguments <samp>A-Z</samp>
+  and <samp>a-z</samp>.</li>
+  </ul>
+
+<p>It then waits for all three subprocesses to finish. As each
+finishes, it prints its exit status, followed by the command and
+  arguments. The output might look like this:</p>
+
+<pre><samp>0 sort
+0 cat b -
+0 tr A-Z a-z
+</samp></pre>
+
+<p>although not necessarily in that order, depending on which order
+the subprocesses finished.</p>
+
+<h2><samp>simpsh</samp> options</h2>
+
+<p>Here is a detailed list of the command-line options
+  that <samp>simpsh</samp> should support. Each option should be
+  executed in sequence, left to right.</p>
+
+<p>First are the file flags. These flags affect the next file that is
+opened. They are ignored if no later file is opened. Each file flag
+corresponds to an <var>oflag</var> value of
+<samp><a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html">open</a></samp>;
+the corresponding <var>oflag</var> value is listed after the
+option. Also
+see <a href="http://www.gnu.org/software/libc/manual/html_node/Opening-and-Closing-Files.html">Opening
+and Closing Files</a>
+and <a href="http://www.gnu.org/software/libc/manual/html_node/Open_002dtime-Flags.html">Open-time
+Flags</a>.</p>
+
+<dl>
+  <dt><samp>--append</samp></dt><dd><samp>O_APPEND</samp></dd>
+  <dt><samp>--cloexec</samp></dt><dd><samp>O_CLOEXEC</samp></dd>
+  <dt><samp>--creat</samp></dt><dd><samp>O_CREAT</samp></dd>
+  <dt><samp>--directory</samp></dt><dd><samp>O_DIRECTORY</samp></dd>
+  <dt><samp>--dsync</samp></dt><dd><samp>O_DSYNC</samp></dd>
+  <dt><samp>--excl</samp></dt><dd><samp>O_EXCL</samp></dd>
+  <dt><samp>--nofollow</samp></dt><dd><samp>O_NOFOLLOW</samp></dd>
+  <dt><samp>--nonblock</samp></dt><dd><samp>O_NONBLOCK</samp></dd>
+  <dt><samp>--rsync</samp></dt><dd><samp>O_RSYNC</samp></dd>
+  <dt><samp>--sync</samp></dt><dd><samp>O_SYNC</samp></dd>
+  <dt><samp>--trunc</samp></dt><dd><samp>O_TRUNC</samp></dd>
+</dl>
+
+<p>Second are the file-opening options. These flags open files. Each
+  file-opening option also corresponds to an <var>oflag</var> value, listed
+  after the option. Each opened file is given a file number; file numbers
+  start at 0 and increment after each file-opening option. Normally they
+  increment by 1, but the <samp>--pipe</samp> option causes them to
+  increment by 2.</p>
+
+<dl>
+  <dt><samp>--rdonly <var>f</var></samp></dt>
+  <dd><samp>O_RDONLY</samp>. Open the file <var>f</var> for reading only.</dd>
+
+  <dt><samp>--rdwr <var>f</var></samp></dt>
+  <dd><samp>O_RDWR</samp>. Open the file <var>f</var> for reading and
+    writing.</dd>
+
+  <dt><samp>--wronly <var>f</var></samp></dt>
+  <dd><samp>O_WRONLY</samp>. Open the file <var>f</var> for writing only.</dd>
+
+  <dt><samp>--pipe</samp></dt>
+<dd>Open a pipe. Unlike the other file options, this option does not
+  take an argument. Also, it consumes file numbers, not just one.</dd>
+</dl>
+
+<p> Third is the subcommand options:</p>
+
+<dl>
+  <dt><samp>--command <var>i o e cmd args</var></samp></dt>
+  <dd>Execute a command with standard input <var>i</var>, standard output
+    <var>o</var> and standard error <var>e</var>; these values should correspond
+    to earlier file or pipe options. The executable for the command
+    is <var>cmd</var> and it has zero or more arguments <var>args</var>.
+    None of the <var>cmd</var> and <var>args</var> operands begin
+    with the two characters "<samp>--</samp>".</dd>
+
+  <dt><samp>--wait</samp></dt>
+  <dd>Wait for all commands to finish. As each finishes, output its exit
+    status, and a copy of the command (with spaces separating arguments)
+    to standard output.</dd>
+</dl>
+
+<p>Finally, there are some miscellaneous options:</p>
+
+<dl>
+  <dt><samp>--close <var>N</var></samp></dt>
+  <dd>Close the <var>N</var>th file that was opened by a file-opening
+    option. For a pipe, this closes just one end of the pipe. Once
+    file <var>N</var> is closed, it is an error to access it, just
+    as it is an error to access any file number that has never
+    been opened. File numbers are not reused by later file-opening
+    options.</dd>
+
+  <dt><samp>--verbose</samp></dt>
+  <dd>Just before executing an option, output a line to standard output
+    containing the option. If the option has operands, list them
+    separated by spaces. Ensure that the line is actually output, and
+    is not merely sitting in a buffer somewhere.</dd>
+
+  <dt><samp>--profile</samp></dt>
+  <dd>Just after executing an option, output a line to standard output
+    containing the resources used. Use <samp><a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/getrusage.html">getrusage</a> and
+    output a line containing as much useful information as you can
+    glean from it.</samp>
+
+  </dd><dt><samp>--abort</samp></dt>
+  <dd>Crash the shell. The shell itself should immediately dump core,
+  via a segmentation violation.</dd>
+
+  <dt><samp>--catch <var>N</var></samp></dt>
+  <dd>Catch signal <var>N</var>, where <var>N</var> is a decimal
+    integer, with a handler that outputs the
+    diagnostic <samp><var>N</var> caught</samp> to stderr, and exits
+    with status <var>N</var>. This exits the entire shell. <var>N</var>
+    uses the same numbering as your system; for example, on GNU/Linux,
+    a segmentation violation is signal 11.</dd>
+
+  <dt><samp>--ignore <var>N</var></samp></dt>
+  <dd>Ignore signal <var>N</var>.</dd>
+
+  <dt><samp>--default <var>N</var></samp></dt>
+  <dd>Use the default behavior for signal <var>N</var>.</dd>
+
+  <dt><samp>--pause</samp></dt>
+  <dd>Pause, waiting for a signal to arrive.</dd>
+</dl>
+
+<p>When there is a syntax error in an option (e.g., a missing
+operand), or where a file cannot be opened, or where is some other
+error in a system call, <samp>simpsh</samp> should report a diagnostic
+to standard error and should continue to the next option. However,
+<samp>simpsh</samp> should ignore any write errors to standard error,
+so that it does not get into an infinite loop outputting write-error
+diagnostics.</p>
+
+<p>When <samp>simpsh</samp> exits other than in response to a signal,
+it should exit with status equal to the maximum of all the exit
+statuses of all the subcommands that it ran and successfully waited
+for. However, if there are no such subcommands, or if the maximum is
+zero, <samp>simpsh</samp> should exit with status 0 if all options
+succeeded, and with status 1 one of them failed. For example, if a
+file could not be opened, <samp>simpsh</samp> must exit with nonzero
+status.</p>
+
+<h2>Implementation</h2>
+
+<p>Your implementation will take three phases:</p><p>
+</p><ul>
+  <li>In Lab 1a, you'll warm up by implementing just the options
+    <samp>--rdonly</samp>, <samp>--wronly</samp>, <samp>--command</samp>,
+    and <samp>--verbose</samp>.</li>
+
+  <li>In Lab 1b, you'll implement the rest of the options,
+    except for <samp>--profile</samp>.</li>
+
+  <li>In Lab 1c, you'll implement <samp>--profile</samp> and
+    compare the performance of your implementation
+    to that of <samp>bash</samp> and that
+    of <samp><a href="http://skarnet.org/software/execline/">execline</a></samp>.</li>
+  </ul>
+
+<p>Before charging ahead and implementing, you should be familiar with
+  the man pages for
+  <samp>close</samp>,
+  <samp>dup2</samp>,
+  <samp>execvp</samp>,
+  <samp>fork</samp>,
+  <samp>getopt_long</samp>,
+  <samp>open</samp>,
+  <samp>pipe</samp>, and
+  <samp>sigaction</samp>.
+
+</p><p>Your program should come with a file named <samp>Makefile</samp>
+that supports the following actions.</p>
+
+<ul>
+<li>'<code>make</code>' builds the <code>simpsh</code> program.</li>
+<li>'<code>make clean</code>' removes the program and all other temporary files
+and object files that can be regenerated with '<code>make</code>'.</li>
+<li>'<code>make check</code>' tests the <code>simpsh</code> program
+on test cases that you design. You should have at least three test cases.</li>
+<li>'<code>make dist</code>' makes a software distribution compressed
+tarball <code>lab1-<var>yourname</var>.tar.gz</code> and does some
+simple testing on it. This tarball is what you should submit via
+CCLE. All the files in the tarball should have names of the form
+<code>lab1-<var>yourname</var>/...</code> and one of the files should
+be <code>lab1-<var>yourname</var>/Makefile</code>.</li>
+</ul>
+
+<p>Your solution should be written in the C programming language.
+Your code should be <a href="http://www.gnu.org/prep/standards/html_node/Semantics.html">robust</a>, for example, it should not impose an arbitrary
+limit like 2<sup>16</sup> bytes on the length of a string. You
+may use the features
+of <a href="https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29">C11</a>
+as implemented on the SEASnet GNU/Linux servers running RHEL 7. Please prepend the
+directory <code>/usr/local/cs/bin</code> to your PATH, to get the
+versions of the tools that we will use to test your solution. Your
+solution should stick to the
+standard <a href="http://www.gnu.org/software/libc/">GNU C library</a>
+that is installed on SEASnet, and should not rely on other
+libraries.</p>
+
+<p>You can test your program by running it directly.
+Eventually, you should put your own
+test cases into a file <code>test.sh</code> and
+run it automatically as part of '<code>make check</code>'.</p>
+
+<h2>Submit</h2>
+
+<p>After you implement Lab 1a, submit via CCLE
+the <code>.tar.gz</code> file that is built by '<code>make
+dist</code>'. Similarly for 1b and 1c. Your submission should contain
+a README file that briefly describes known limitations of your code
+and any extra features you'd like to call our attention to.</p>
+
+<p>We will check your work on each lab part by running it on the
+SEASnet GNU/Linux servers, so make sure they work on there. Lab 1 parts
+are due at different times, but we will not grade each part
+separately; the lab grade is determined by your overall work on all
+three parts.</p>
+
+<h2>Design problem ideas</h2>
+
+<p>Here are some suggestions for design problems, if you have been
+assigned a design problem for Lab 1. You may implement one of them, or
+design your own. If you design your own, get approval from us before
+committing significant work to it. Your implementations should include
+test cases.</p>
+
+<p>For Lab 1a:</p>
+<ul>
+<li>The ability to read from a script rather than just the command line.
+The script should have the same flexibility as the command line.</li>
+<li>Control structures equivalent to the
+shell's <code>&amp;&amp;</code>, <code>||</code>, <code>if</code>, <code>while</code>, <code>case</code>, <code>for</code>,
+and <code>!</code>.</li>
+<li>Make your shell interactive, with a prompt, and command-line
+editing, and tab completion, and have it do something reasonable when
+you type control-C. You can use the GNU readline library for
+this.</li>
+</ul>
+
+<p>For Lab 1b:</p>
+<ul>
+  <li>Allow flags to apply to pipes as well, when appropriate.
+    For example, the <samp>--nonblock</samp> flag. Investigate
+    which flags are appropriate.</li>
+  <li>Extend the shell to wait for individual subcommands,
+    instead of waiting for them all to finish.</li>
+  <li>Investigate what happens when you create a cycle in the
+    directed graph of pipes in your subprocesses. Detect and
+    prevent such cycles from causing problems.</li>
+</ul>
+
+<p>For Lab 1c:</p>
+<ul>
+  <li>Write a program to translate from standard shell format
+  to <samp>simpsh</samp>, or vice versa.</li>
+  <li>Compare two or three other shells' performances too, e.g., Dash,
+    Tcsh.</li>
+  <li>Limit the amount of parallelism to at most <var>N</var>
+subprocesses, where <var>N</var> is a parameter that you can set by an
+argument to the shell.</li>
+</ul>
+
+<hr>
+<address>
+ © 2012–2014, 2016 <a href="http://web.cs.ucla.edu/classes/winter16/cs111/mail-eggert.html">Paul Eggert</a>.
+ See <a href="http://web.cs.ucla.edu/classes/winter16/cs111/copyright.html">copying rules</a>.<br>
+
+ $Id: lab1.html,v 1.14 2016/01/15 21:08:16 eggert Exp $
+
+</address>
+
+
+
+</body></html>
