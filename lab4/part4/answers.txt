@@ -1,0 +1,19 @@
+Name: Genry Tovmasian
+UID: 504306339
+
+Design Project for Lab 4, Part 4
+I found, by using many 'struct timespec' objects, that the most time in my code was spent in the overhead of creating and joining threads in 'pthread_create' and 'pthread_join'. I then found that the timer itself, that uses 'clock_gettime()' was taking about 50 ns, which was negligable and could be run multiple times without causing much slowdown to the 'totaltime' variable that I was trying to measure. In order to get a correct measurement of the total time the ACTUAL ops were running and remove the overhead out of the functions, I used the alread-created 'threadedfunction()' that I had written and put 'clock_gettime()' in there between the locks (because the locks might cause the process to wait a while, thus skewing data) and I found data that was significantly closer to the actual time each op was running.
+
+From oversaturating our code (testing a large amount of iterations/threads to dilute the overhead), I would get about 4-5ns per op (avg) and we would get >1000ns for any code below 10 threads/iterations.
+$ rm sltest; make; ./sltest --iterations=10 --threads=10 --sync=s --lists=3
+gcc -g -Wall -Wextra -Wno-unused -Werror -lrt -pthread -o sltest sltest.c SortedList.c
+10 threads x 10 iterations x (ins + lookup/del) x (3/2 avg len)= 200 operations
+elapsed time: 1235606 ns
+per operation: 6178 ns
+
+With my measured amount by putting gettime() into the function that each thread would run(using correction), even with <5 threads and <5 iterations, we would get <200 ns
+$ rm sltest; make; ./sltest --iterations=10 --correct --threads=10 --sync=s --lists=3
+gcc -g -Wall -Wextra -Wno-unused -Werror -lrt -pthread -o sltest sltest.c SortedList.c
+10 threads x 10 iterations x (ins + lookup/del) x (3/2 avg len)= 200 operations
+elapsed time: 16858 ns
+per operation: 84 ns

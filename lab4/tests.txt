@@ -1,0 +1,445 @@
+PART 1:
+
+./addtest --iter=1000 --threads=1
+1 threads x 1000 iterations x (add + subtract) = 2000 operations
+elapsed time: 141855 ns
+per operation: 70 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=2000 --threads=1
+1 threads x 2000 iterations x (add + subtract) = 4000 operations
+elapsed time: 154361 ns
+per operation: 38 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=3000 --threads=1
+1 threads x 3000 iterations x (add + subtract) = 6000 operations
+elapsed time: 165611 ns
+per operation: 27 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=4000 --threads=1
+1 threads x 4000 iterations x (add + subtract) = 8000 operations
+elapsed time: 176901 ns
+per operation: 22 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=5000 --threads=1
+1 threads x 5000 iterations x (add + subtract) = 10000 operations
+elapsed time: 199464 ns
+per operation: 19 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=6000 --threads=1
+1 threads x 6000 iterations x (add + subtract) = 12000 operations
+elapsed time: 213692 ns
+per operation: 17 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=7000 --threads=1
+1 threads x 7000 iterations x (add + subtract) = 14000 operations
+elapsed time: 205659 ns
+per operation: 14 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=8000 --threads=1
+1 threads x 8000 iterations x (add + subtract) = 16000 operations
+elapsed time: 223302 ns
+per operation: 13 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=9000 --threads=1
+1 threads x 9000 iterations x (add + subtract) = 18000 operations
+elapsed time: 235419 ns
+per operation: 13 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=10000 --threads=1
+1 threads x 10000 iterations x (add + subtract) = 20000 operations
+elapsed time: 259192 ns
+per operation: 12 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=11000 --threads=1
+1 threads x 11000 iterations x (add + subtract) = 22000 operations
+elapsed time: 281628 ns
+per operation: 12 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=12000 --threads=1
+1 threads x 12000 iterations x (add + subtract) = 24000 operations
+elapsed time: 271355 ns
+per operation: 11 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=13000 --threads=1
+1 threads x 13000 iterations x (add + subtract) = 26000 operations
+elapsed time: 275711 ns
+per operation: 10 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=14000 --threads=1
+1 threads x 14000 iterations x (add + subtract) = 28000 operations
+elapsed time: 299950 ns
+per operation: 10 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=15000 --threads=1
+1 threads x 15000 iterations x (add + subtract) = 30000 operations
+elapsed time: 386679 ns
+per operation: 12 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part1]$ ./addtest --iter=16000 --threads=1
+1 threads x 16000 iterations x (add + subtract) = 32000 operations
+elapsed time: 416742 ns
+per operation: 13 ns
+
+
+Test:
+unprotected:
+./addtest --iterations=10000 --threads=1
+1 threads x 10000 iterations x (add + subtract) = 20000 operations
+elapsed time: 383625 ns
+per operation: 19 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=3
+3 threads x 10000 iterations x (add + subtract) = 60000 operations
+ERROR: final count = -1903
+elapsed time: 1376798 ns
+per operation: 22 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=5
+5 threads x 10000 iterations x (add + subtract) = 100000 operations
+ERROR: final count = 3560
+elapsed time: 1210781 ns
+per operation: 12 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=7
+7 threads x 10000 iterations x (add + subtract) = 140000 operations
+ERROR: final count = 2068
+elapsed time: 1844240 ns
+per operation: 13 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=10
+10 threads x 10000 iterations x (add + subtract) = 200000 operations
+ERROR: final count = -1210
+elapsed time: 2664100 ns
+per operation: 13 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=15
+15 threads x 10000 iterations x (add + subtract) = 300000 operations
+ERROR: final count = 388
+elapsed time: 3878549 ns
+per operation: 12 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=20
+20 threads x 10000 iterations x (add + subtract) = 400000 operations
+ERROR: final count = -11718
+elapsed time: 4988457 ns
+per operation: 12 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=30
+30 threads x 10000 iterations x (add + subtract) = 600000 operations
+ERROR: final count = -5448
+elapsed time: 7757231 ns
+per operation: 12 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=30
+
+-----------------------------------------------------------------------------
+mutex:
+./addtest --iterations=10000 --threads=1 --sync=m
+1 threads x 10000 iterations x (add + subtract) = 20000 operations
+elapsed time: 839083 ns
+per operation: 41 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=2 --sync=m
+2 threads x 10000 iterations x (add + subtract) = 40000 operations
+elapsed time: 2670586 ns
+per operation: 66 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=3 --sync=m
+3 threads x 10000 iterations x (add + subtract) = 60000 operations
+elapsed time: 9298223 ns
+per operation: 154 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=4 --sync=m
+4 threads x 10000 iterations x (add + subtract) = 80000 operations
+elapsed time: 15109491 ns
+per operation: 188 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=5 --sync=m
+5 threads x 10000 iterations x (add + subtract) = 100000 operations
+elapsed time: 20907974 ns
+per operation: 209 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=10 --sync=m
+10 threads x 10000 iterations x (add + subtract) = 200000 operations
+elapsed time: 29568199 ns
+per operation: 147 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=15 --sync=m
+15 threads x 10000 iterations x (add + subtract) = 300000 operations
+elapsed time: 42673028 ns
+per operation: 142 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=20 --sync=m
+20 threads x 10000 iterations x (add + subtract) = 400000 operations
+elapsed time: 52802879 ns
+per operation: 132 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=25 --sync=m
+25 threads x 10000 iterations x (add + subtract) = 500000 operations
+elapsed time: 66294687 ns
+per operation: 132 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=30 --sync=m
+30 threads x 10000 iterations x (add + subtract) = 600000 operations
+elapsed time: 80539502 ns
+per operation: 134 ns
+
+------------------------------------------------------------------------------------------
+spinlock:
+./addtest --iterations=10000 --threads=1 --sync=s
+1 threads x 10000 iterations x (add + subtract) = 20000 operations
+elapsed time: 407290 ns
+per operation: 20 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=2 --sync=s
+2 threads x 10000 iterations x (add + subtract) = 40000 operations
+elapsed time: 2912795 ns
+per operation: 72 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=3 --sync=s
+3 threads x 10000 iterations x (add + subtract) = 60000 operations
+elapsed time: 7245981 ns
+per operation: 120 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=4 --sync=s
+4 threads x 10000 iterations x (add + subtract) = 80000 operations
+elapsed time: 9758966 ns
+per operation: 121 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=5 --sync=s
+5 threads x 10000 iterations x (add + subtract) = 100000 operations
+elapsed time: 21470756 ns
+per operation: 214 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=10 --sync=s
+10 threads x 10000 iterations x (add + subtract) = 200000 operations
+elapsed time: 71238099 ns
+per operation: 356 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=15 --sync=s
+15 threads x 10000 iterations x (add + subtract) = 300000 operations
+elapsed time: 158968397 ns
+per operation: 529 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=20 --sync=s
+20 threads x 10000 iterations x (add + subtract) = 400000 operations
+elapsed time: 255229086 ns
+per operation: 638 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=25 --sync=s
+25 threads x 10000 iterations x (add + subtract) = 500000 operations
+elapsed time: 338054861 ns
+per operation: 676 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=30 --sync=s
+30 threads x 10000 iterations x (add + subtract) = 600000 operations
+elapsed time: 454144627 ns
+per operation: 756 ns
+
+-------------------------------------------------------------------------------------
+compare_swap:
+./addtest --iterations=10000 --threads=1 --sync=c
+1 threads x 10000 iterations x (add + subtract) = 20000 operations
+elapsed time: 608637 ns
+per operation: 30 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=2 --sync=c
+2 threads x 10000 iterations x (add + subtract) = 40000 operations
+elapsed time: 4358818 ns
+per operation: 108 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=3 --sync=c
+3 threads x 10000 iterations x (add + subtract) = 60000 operations
+elapsed time: 12316641 ns
+per operation: 205 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=4 --sync=c
+4 threads x 10000 iterations x (add + subtract) = 80000 operations
+elapsed time: 24064736 ns
+per operation: 300 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=5 --sync=c
+5 threads x 10000 iterations x (add + subtract) = 100000 operations
+elapsed time: 13648088 ns
+per operation: 136 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=10 --sync=c
+10 threads x 10000 iterations x (add + subtract) = 200000 operations
+elapsed time: 124900013 ns
+per operation: 624 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=15 --sync=c
+15 threads x 10000 iterations x (add + subtract) = 300000 operations
+elapsed time: 282009190 ns
+per operation: 940 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=20 --sync=c
+20 threads x 10000 iterations x (add + subtract) = 400000 operations
+elapsed time: 374718400 ns
+per operation: 936 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=25 --sync=c
+25 threads x 10000 iterations x (add + subtract) = 500000 operations
+elapsed time: 18446744073199623415 ns
+per operation: 36893488146399 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iterations=10000 --threads=25 --sync=c
+25 threads x 10000 iterations x (add + subtract) = 500000 operations
+elapsed time: 514405717 ns
+per operation: 1028 ns
+
+--------------------------------------------------------------------------------------
+Part 2:
+single thread:
+
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=15 --threads=1
+1 threads x 15 iterations x (ins + lookup/del) x (15/2 avg len)= 210 operations
+elapsed time: 115379 ns
+per operation: 549 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=20 --threads=1
+1 threads x 20 iterations x (ins + lookup/del) x (20/2 avg len)= 400 operations
+elapsed time: 117502 ns
+per operation: 293 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=30 --threads=1
+1 threads x 30 iterations x (ins + lookup/del) x (30/2 avg len)= 900 operations
+elapsed time: 153906 ns
+per operation: 171 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=50 --threads=1
+1 threads x 50 iterations x (ins + lookup/del) x (50/2 avg len)= 2500 operations
+elapsed time: 139897 ns
+per operation: 55 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=80 --threads=1  1 threads x 80 iterations x (ins + lookup/del) x (80/2 avg len)= 6400 operations
+elapsed time: 160590 ns
+per operation: 25 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=100 --threads=1 
+1 threads x 100 iterations x (ins + lookup/del) x (100/2 avg len)= 10000 operations
+elapsed time: 158982 ns
+per operation: 15 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=150 --threads=1 
+1 threads x 150 iterations x (ins + lookup/del) x (150/2 avg len)= 22500 operations
+elapsed time: 192720 ns
+per operation: 8 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=200 --threads=1 
+1 threads x 200 iterations x (ins + lookup/del) x (200/2 avg len)= 40000 operations
+elapsed time: 253380 ns
+per operation: 6 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=250 --threads=1 
+1 threads x 250 iterations x (ins + lookup/del) x (250/2 avg len)= 62500 operations
+elapsed time: 299081 ns
+per operation: 4 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=300 --threads=1 
+1 threads x 300 iterations x (ins + lookup/del) x (300/2 avg len)= 90000 operations
+elapsed time: 439126 ns
+per operation: 4 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=350 --threads=1 
+1 threads x 350 iterations x (ins + lookup/del) x (350/2 avg len)= 122500 operations
+elapsed time: 1342495 ns
+per operation: 10 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=400 --threads=1 
+1 threads x 400 iterations x (ins + lookup/del) x (400/2 avg len)= 160000 operations
+elapsed time: 568563 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=450 --threads=1 
+1 threads x 450 iterations x (ins + lookup/del) x (450/2 avg len)= 202500 operations
+elapsed time: 673803 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=500 --threads=1 
+1 threads x 500 iterations x (ins + lookup/del) x (500/2 avg len)= 250000 operations
+elapsed time: 752879 ns
+per operation: 3 ns
+
+------------------------------------------------------------------------------
+per operation times (for each of the three synchronization options unprotected, mutex, spin) vs the number of threads:
+Mutex:
+./sltest --iterations=2000 --threads=2 --sync=m
+2 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 8000000 operations
+elapsed time: 28099846 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=5 --sync=m
+5 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 20000000 operations
+elapsed time: 69788410 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=10 --sync=m
+10 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 40000000 operations
+elapsed time: 133471993 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=15 --sync=m
+15 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 60000000 operations
+elapsed time: 200174822 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=20 --sync=m
+20 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 80000000 operations
+elapsed time: 265420566 ns
+per operation: 3 ns
+./sltest --iterations=2000 --threads=30 --sync=m
+30 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 120000000 operations
+elapsed time: 397487187 ns
+per operation: 3 ns
+ ./sltest --iterations=2000 --threads=50 --sync=m
+50 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 200000000 operations
+elapsed time: 669313687 ns
+per operation: 3 ns
+--------------------------
+Spinlock:
+./sltest --iterations=2000 --threads=2 --sync=s
+2 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 8000000 operations
+elapsed time: 30180987 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=5 --sync=s
+5 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 20000000 operations
+elapsed time: 76037028 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=10 --sync=s
+10 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 40000000 operations
+elapsed time: 158843891 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=15 --sync=s
+15 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 60000000 operations
+elapsed time: 250927737 ns
+per operation: 4 ns
+./sltest --iterations=2000 --threads=20 --sync=s
+20 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 80000000 operations
+elapsed time: 365738694 ns
+per operation: 4 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=30 --sync=s
+30 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 120000000 operations
+elapsed time: 561302334 ns
+per operation: 4 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --threads=50 --sync=s
+50 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 200000000 operations
+elapsed time: 146451193 ns
+per operation: 0 ns
+------------------------------------------------------------------------------------------
+all three versions without yields, for range of --list values
+unprotected:
+./sltest --iterations=2000 --threads=1 --lists=1
+1 threads x 2000 iterations x (ins + lookup/del) x (2000/2 avg len)= 4000000 operations
+elapsed time: 46935893 ns
+per operation: 11 ns
+-----------------------
+mutex:
+./sltest --iterations=2000 --sync=m --threads=2 --lists=2
+2 threads x 2000 iterations x (ins + lookup/del) x (1000/2 avg len)= 4000000 operations
+elapsed time: 14337212 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=m --threads=6 --lists=3
+6 threads x 2000 iterations x (ins + lookup/del) x (666/2 avg len)= 7992000 operations
+elapsed time: 29670271 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=m --threads=12 --lists=4
+12 threads x 2000 iterations x (ins + lookup/del) x (500/2 avg len)= 12000000 operations
+elapsed time: 43682227 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=m --threads=20 --lists=5
+20 threads x 2000 iterations x (ins + lookup/del) x (400/2 avg len)= 16000000 operations
+elapsed time: 61159093 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=m --threads=30 --lists=6
+30 threads x 2000 iterations x (ins + lookup/del) x (333/2 avg len)= 19920000 operations
+elapsed time: 76195120 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=m --threads=42 --lists=7
+42 threads x 2000 iterations x (ins + lookup/del) x (285/2 avg len)= 23856000 operations
+elapsed time: 91042550 ns
+per operation: 3 ns
+ ./sltest --iterations=2000 --sync=m --threads=56 --lists=8
+56 threads x 2000 iterations x (ins + lookup/del) x (250/2 avg len)= 28000000 operations
+elapsed time: 112663649 ns
+per operation: 4 ns
+./sltest --iterations=2000 --sync=m --threads=72 --lists=9
+72 threads x 2000 iterations x (ins + lookup/del) x (222/2 avg len)= 31968000 operations
+elapsed time: 128618665 ns
+per operation: 4 ns
+./sltest --iterations=2000 --sync=m --threads=90 --lists=10
+90 threads x 2000 iterations x (ins + lookup/del) x (200/2 avg len)= 36000000 operations
+elapsed time: 145138375 ns
+per operation: 4 ns
+---------------------------------
+Spinlock:
+./sltest --iterations=2000 --sync=s --threads=2 --lists=2
+2 threads x 2000 iterations x (ins + lookup/del) x (1000/2 avg len)= 4000000 operations
+elapsed time: 15366375 ns
+per operation: 3 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=s --threads=6 --lists=3
+6 threads x 2000 iterations x (ins + lookup/del) x (666/2 avg len)= 7992000 operations
+elapsed time: 37285216 ns
+per operation: 4 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=s --threads=12 --lists=4
+12 threads x 2000 iterations x (ins + lookup/del) x (500/2 avg len)= 12000000 operations
+elapsed time: 76452495 ns
+per operation: 6 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=s --threads=20 --lists=5
+20 threads x 2000 iterations x (ins + lookup/del) x (400/2 avg len)= 16000000 operations
+elapsed time: 129772945 ns
+per operation: 8 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=s --threads=30 --lists=6
+30 threads x 2000 iterations x (ins + lookup/del) x (333/2 avg len)= 19920000 operations
+elapsed time: 229979603 ns
+per operation: 11 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=s --threads=42 --lists=7
+42 threads x 2000 iterations x (ins + lookup/del) x (285/2 avg len)= 23856000 operations
+elapsed time: 369441507 ns
+per operation: 15 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=s --threads=56 --lists=8
+56 threads x 2000 iterations x (ins + lookup/del) x (250/2 avg len)= 28000000 operations
+elapsed time: 562331229 ns
+per operation: 20 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=s --threads=72 --lists=9
+72 threads x 2000 iterations x (ins + lookup/del) x (222/2 avg len)= 31968000 operations
+elapsed time: 753683321 ns
+per operation: 23 ns
+[classnou@lnxsrv09 ~/Desktop/lab4/part2]$ ./sltest --iterations=2000 --sync=s --threads=90 --lists=10
+90 threads x 2000 iterations x (ins + lookup/del) x (200/2 avg len)= 36000000 operations
+elapsed time: 159256777 ns
+per operation: 4 ns
+

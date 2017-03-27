@@ -1,0 +1,513 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0062)http://web.cs.ucla.edu/classes/winter16/cs111/assign/lab4.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>Lab 4. Synchronization</title>
+<link rel="copyright" href="http://web.cs.ucla.edu/classes/winter16/cs111/copyright.html">
+<link rev="made" href="mailto:eggert@cs.ucla.edu">
+<style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+.en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+}
+
+.en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+}
+</style></head>
+
+<body>
+
+<h1>Lab 4. Synchronization</h1>
+
+<h2>Project goals</h2>
+
+<p>
+This is not meant to be a difficult project, but is intended to force
+you to directly engage (at a low level) with a range synchronization
+problems. The educational and skill demonstration goals of this
+project are:
+</p>
+<ul>
+  <li>
+    primary: demonstrate the ability to recognize critical sections
+    and address them with a variety of different mechanisms.</li>
+  <li>
+    primary: demonstrate the existence of the problems and efficacy of
+    the subsequent solutions</li>
+  <li>secondary: demonstrate the ability to deliver code to meet CLI
+  and API specifications.</li>
+  <li>secondary: experience with basic performance measurement and
+  instrumentation</li>
+  <li>secondary: experience with application development, exploiting
+  new library functions, creating command line options to control
+  non-trivial behavior.</li>
+  </ul>
+
+<h2>Assignment overview</h2>
+
+<p>
+  The assignment is divided into three general parts and an optional
+  design problem.</p>
+<ol>
+  <li>
+    conflicting read-modify-write operations on a single variable.</li>
+  <li>
+    conflicting search and update operations in an ordered doubly
+    linked list.</li>
+  <li>understanding the crux issue in sleep/wakeup races</li>
+  <li>(design problem) correct a significant measurement artifact</li>
+</ol>
+
+<p>
+  In this assignment, you will:
+</p>
+<ul>
+  <li>
+    implement a few basic operations on shared variables and complex
+    data structures.</li>
+  <li>implement test programs to exercise those operations.</li>
+  <li>
+    demonstrate race conditions resulting from unprotected parallel
+    execution.</li>
+  <li>implement and demonstrate the effectiveness of a few different
+  serialization mechanisms.</li>
+  <li>measure the relative performance of these implementations as a
+  function of the number of competing threads and operations, and
+  explain your results.</li>
+  <li>explain the correct handling of a very important critical
+  section that was only briefly covered in the reading.</li>
+</ul>
+
+<p>
+  Your deliverables for this assignment will include:
+</p>
+<ul>
+<li>object modules that build cleanly and implement specified APIs</li>
+<li>programs that build cleanly and implement specified CLIs</li>
+<li>executions of those programs to demonstrate specified problems and
+solutions</li>
+<li>timing results and graphs</li>
+<li>brief (1 paragraph) explanations of those results</li>
+</ul>
+
+<p>
+To perform this assignment, you will need to learn to exploit a few new tools:
+</p>
+
+<ul>
+<li>clock_gettime(2) … high resolution timers</li>
+<li><a href="http://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html">GCC
+atomic builtins</a>
+</li><li>gnuplot(1) … you may also find it useful to learn to use
+this versatile package for producing your graphs.</li>
+</ul>
+
+<h2>Part 1 – parallel updates to a shared variable</h2>
+
+<h3>Summary of Deliverables</h3>
+
+<ul>
+  <li>
+the source for a C program and Makefile that cleanly (no warnings)
+builds using gcc on an x86-64 GNU/Linux system, implements the (below)
+specified command line options, drives one or more parallel threads
+that do adds and subtracts to a shared variable, and reports on the
+final sum and performance.
+  </li><li>
+graphs of:
+    <ul>
+      <li>the average time per operation vs the number of iterations</li>
+      <li>the average time per operation vs the number of threads for
+      all four versions of the add function.</li>
+    </ul>
+  </li><li>written brief (a few sentences per question) answers to
+  questions 1.1, 1.2 and 1.3.</li>
+</ul>
+
+<h3>Detailed instructions</h3>
+
+<p>Start with a basic add routine:</p>
+
+<pre><code>    void add(long long *pointer, long long value) {
+        long long sum = *pointer + value;
+        *pointer = sum;
+    }
+</code></pre>
+
+<p>Write a test driver program called addtest that:</p>
+<ul>
+  <li>takes a parameter for the number of parallel threads
+  (<code>--threads=</code>#, default 1)</li>
+  <li>takes a parameter for the number of iterations
+  (<code>--iterations=</code>#, default 1)</li>
+  <li>initializes a (long long) counter to zero.</li>
+  <li>notes the (high resolution) starting time for the run (using
+  clock_gettime(2))</li>
+  <li>starts the specified number of threads, each of which will use
+  the above add function to:
+  <ul>
+    <li>add 1 to the counter the specified number of times</li>
+    <li>add −1 to the counter the specified number of times</li>
+    <li>exits to re-join the parent thread</li>
+  </ul>
+  </li>
+  <li>wait for all threads to complete, and notes the (high
+  resolution) ending time for the run.</li>
+  <li>checks to see if the counter value is zero, and if not log an
+  error message to stderr</li>
+  <li>prints to stdout
+  <ul>
+    <li>the total number of operations performed</li>
+    <li>the total run time (in nanoseconds), and the average time per
+    operation (in nanoseconds).</li>
+  </ul></li>
+  <li>If there were no errors, exit with a status of zero, else a
+  non-zero status</li>
+</ul>
+
+<p>suggested sample output:</p>
+
+<pre><code>  $ ./addtest --iter=10000 --threads=10
+  10 threads x 10000 iterations x (add + subtract) = 200000 operations
+  ERROR: final count = 374
+  elapsed time: 6574000 ns
+  per operation: 2 ns
+</code></pre>
+
+<p>Run your program for a range of threads and iterations values, and
+note how many threads and iterations it takes to (fairly consistently)
+result in a failure (non-zero sum).</p>
+
+<p>QUESTIONS 1.1:</p>
+<ol>
+  <li>Why does it take this many threads or iterations?</li>
+  <li>Why does a significantly smaller number of iterations so seldom
+  fail?</li>
+</ol>
+
+<p>Extend the basic add routine to be more easily cause the failures:</p>
+
+<pre><code>    int opt_yield;
+
+    void add(long long *pointer, long long value) {
+        long long sum = *pointer + value;
+        if (opt_yield)
+            pthread_yield();
+        *pointer = sum;
+    }
+</code></pre>
+
+<p>And add a new <code>--yield=1</code> option to your driver program
+that sets <code>opt_yield</code> to 1. Re-run your tests and see how many
+iterations and threads it takes to (fairly consistently) result in a
+failure.  It should now be much easier to cause the failures.</p>
+
+<p>Compare the average execution time of the yield and non-yield
+versions with different numbers of threads and iterations.  You should
+note that the <code>--yield</code> runs are much slower than the
+non-yield runs … even with a single thread.</p>
+
+<p>Graph the average cost per operation (non-yield) as a function of
+the number of iterations, with a single thread.  You should note that
+the average cost per operation goes down as the number of iterations
+goes up.</p>
+
+<p>QUESTIONS 1.2</p>
+<ol>
+  <li>Why does the average cost per operation drop with increasing
+  iterations?</li>
+  <li>How do we know what the “correct” cost is?</li>
+  <li>Why are the --yield runs so much slower?  Where is the extra
+  time going?</li>
+  <li>Can we get valid timings if we are using --yield?  How, or why not?</li>
+</ol>
+
+<p>Implement three new versions of the add function:</p>
+
+<ul>
+  <li>one protected by a pthread_mutex, enabled by a
+  new <code>--sync=m</code> option.</li>
+  <li>one protected by a spin-lock, enabled by a
+  new <code>--sync=s</code> option.  You will have to implement your
+  own spin-lock operation.  We suggest that you do this using the GCC
+  atomic <code>__sync_</code> builtin
+  functions <code>__sync_lock_test_and_set</code>
+  and <code>__sync_lock_release</code>.
+  </li><li>one that performs the add using the GCC
+  atomic <code>__sync_</code> builtin
+  function <code>__sync_val_compare_and_swap</code> to ensure atomic
+  updates to the shared counter, enabled by a
+  new <code>--sync=c</code> option.
+</li></ul>
+
+<p>Use your yield option to confirm that (even for large numbers of
+threads and iterations) all three of these serialization mechanisms
+eliminates the race conditions in the add critical section.</p>
+
+<p>Using a large enough number of iterations to overcome the issues
+raised in the previous section, note the average time per operation
+for a range of <code>threads=</code> values, and graph the performance
+of all four versions (unprotected, mutex, spin-lock, compare-and-swap)
+vs the number of threads.</p>
+
+<p>QUESTIONS 1.3</p>
+<ol>
+  <li>Why do all of the options perform similarly for low numbers of
+  threads?</li>
+  <li>Why do the three protected operations slow down as the number of
+  threads rises?</li>
+  <li>Why are spin-locks so expensive for large numbers of threads?</li>
+</ol>
+
+<h2>Part 2 – parallel updates to complex data structures</h2>
+
+<h3>Summary of Deliverables</h3>
+<ul>
+  <li>the source for a C module and Makefile that cleanly (no
+  warnings) builds using gcc on an x86-64 GNU/Linux system, and
+  implements insert, delete, lookup, and length methods for a sorted
+  doubly linked list (described in a provided header file, including
+  correct placement of pthread_yield calls).</li>
+  <li>the source for a C program and Makefile that cleanly (no
+  warnings) builds using gcc on an x86-64 GNU/Linux system, implements
+  the (below) specified command line options, drives one or more
+  parallel threads that do operations on a shared linked list, and
+  reports on the final list and performance.</li>
+  <li>graphs of:
+  <ul>
+    <li>average time per unprotected operation vs number of iteration
+    (single thread)</li>
+    <li>(corrected) average time per operation (for none, mutex, and
+    spin-lock) vs number of threads.</li>
+    <li>(corrected) average time per operation (for none, mutex, and
+    spin-lock) vs the ratio of threads per list.</li>
+  </ul>o</li>
+  <li>written brief (a few sentences per question) answers to
+  questions 2.1, 2.2 and 2.3.</li>
+</ul>
+
+<h3>Detailed instructions</h3>
+
+<p>Review the interface specifications for a sorted doubly linked list
+package described in the header
+file <code><a href="http://web.cs.ucla.edu/classes/winter16/cs111/assign/SortedList.h">SortedList.h</a></code>, and
+implement all four those methods.  Note that the interface includes
+three software-controlled yield options.  Identify the critical
+section in each of your four methods, and add calls to pthread_yield,
+controlled by the yield options:</p>
+<ul>
+  <li>in <code>SortedList_insert</code> if <code>opt_yield &amp;
+  INSERT_YIELD</code></li>
+  <li>in <code>SortedList_delete</code> if <code>opt_yield &amp;
+  DELETE_YIELD</code></li>
+  <li>in <code>SortedList_lookup</code> if <code>opt_yield &amp;
+  SEARCH_YIELD</code></li>
+  <li>in <code>SortedList_length</code> if <code>opt_yield &amp;
+  SEARCH_YIELD</code></li>
+</ul>
+<p>These force a switch to another thread at the critical point in
+each method.</p>
+
+<p>Write a test driver program (you can start with your driver from
+part 1) called <code>sltest</code> that:</p>
+<ul>
+  <li>takes a parameter for the number of parallel threads
+  (<code>--threads=#</code>, default 1)</li>
+  <li>takes a parameter for the number of iterations
+  (<code>--iterations=#</code>, default 1)</li>
+  <li>takes a parameter to enable the optional critical section yields
+  (<code>--yield=[ids]</code>, i for insert, d for delete, and s for
+  searches)</li>
+  <li>initializes an empty list.</li>
+  <li>creates and initializes (with random keys) the required number
+  (threads × iterations) of list elements.  We do this before
+  creating the threads so that this time is not included in our
+  start-to-finish measurement.</li>
+  <li>notes the (high resolution) starting time for the run (using
+  clock_gettime(2))</li>
+  <li>starts the specified number of threads, each of which will use
+  the above list function to
+  <ul>
+    <li>insert each of its elements (iterations parameter) into the
+    list</li>
+    <li>gets the list length</li>
+    <li>look up each of the keys it inserted</li>
+    <li>deletes each returned element from the list</li>
+    <li>exits to re-join the parent thread</li>
+  </ul></li>
+  <li>wait for all threads to complete, and notes the (high
+  resolution) ending time for the run.</li>
+  <li>checks the length of the list to confirm that it is zero, and
+  logs an error to stderr if it is not.</li>
+  <li>prints to stdout
+  <ul>
+    <li>the number of operations performed</li>
+    <li>the total run time (in nanoseconds), and the average time per
+    operation (in nanoseconds).</li>
+  </ul></li>
+  <li>exits with a status of zero if there were no errors, otherwise
+  non-zero</li>
+</ul>
+
+<p>Suggested sample output:</p>
+
+<pre><samp>    $ ./sltest --threads=10 --iterations=1000 --lists=10 --sync=m 10
+    threads x 100 iterations x (ins + lookup/del) x (100/2 avg len) = 100000 operations
+    elapsed time: 4225760 ns
+    per operation: 4 ns
+</samp></pre>
+
+<p>Run your program with a single thread, and increasing numbers of
+iterations, and note the average time per operation.  These results
+should be quite different from what you observed when testing your add
+function with increasing numbers of iterations.  Graph the time per
+operation vs the number of iterations (for
+a <code>--threads=1</code>).</p>
+
+<p>QUESTIONS 2.1</p>
+
+<ul>
+  <li>Explain the variation in time per operation vs the number of
+  iterations?
+    How would you propose to correct for this effect?</li>
+</ul>
+
+<p>Run your program and see how many parallel threads and iterations
+it takes to fairly consistently demonstrate a problem.  Note that even
+if you check for most inconsistencies in the list, your program may
+still experience segmentation faults when running multi-threaded
+without synchronization.  Then run it again using various combinations
+of yield options and see how many threads and iterations it takes to
+fairly consistently demonstrate the problem.  Make sure that you can
+demonstrate:</p>
+
+<ul>
+  <li>conflicts between inserts (<code>--yield=i</code>)</li>
+  <li>conflicts between deletes (<code>--yield=d</code>)</li>
+  <li>conflicts between inserts and lookups
+  (<code>--yield=is</code>)</li>
+  <li>conflicts between deletes and lookups
+  (<code>--yield=ds</code>)</li>
+</ul>
+
+<p>Add two new options to your program to call two new versions of
+these methods: one set of operations protected by pthread_mutexes
+(<code>--sync=m</code>), and another protected by test-and-set spin
+locks (<code>--sync=s</code>).  Using your <code>--yield</code>
+options, demonstrate that either of these protections seem to
+eliminate all of the problems, even for large numbers of threads and
+iterations.</p>
+
+<p>Rerun your program without the yields, and choose an appropriate
+number of iterations (or apply the correction you identified in
+response to question 2.1).  Note that you will only be able to run the
+unprotected method for a single thread.  Note the execution times for
+the original and both new protected methods.  Graph the (corrected)
+per operation times (for each of the three synchronization options:
+unprotected, mutex, spin) vs the number of threads.</p>
+
+<p>QUESTIONS 2.2</p>
+<ul>
+  <li>Compare the variation in time per protected operation vs the
+  number of threads in Part 2 and in Part 1.  Explain the
+  difference.</li>
+</ul>
+
+<p>Add a new <code>--lists=</code># option to your test driver
+program:</p>
+<ul>
+  <li>break the single (huge) sorted list into the specified number of
+  sub-lists (each with its own list header and synchronization
+  object.</li>
+  <li>change your test driver to select which sub-list a particular
+  key should be in based on a simple hash of the key, modulo the
+  number of lists.</li>
+  <li>figure out how to (safely and correctly) re-implement the length
+  function, which now needs to enumerate all of the sub-lists.</li>
+</ul>
+
+<p>Rerun all three versions (unprotected, spin, mutex) of your program
+(without yields) for a range of <code>--lists=</code> values.  Note
+that you will only be able to run the unprotected version for a single
+thread.  Graph the per operation times (for each of the three
+synchronization options) vs the ratio of threads to lists.</p>
+
+<p>QUESTIONS 2.3</p>
+<ul>
+  <li>Explain the the change in performance of the synchronized
+  methods as a function of the number of threads per list.</li>
+  <li>Explain why threads per list is a more interesting number than
+  threads (for this particular measurement).</li>
+</ul>
+
+<h2>Part 3 – sleep/wakeup races</h2>
+
+<h3>Summary of Deliverables</h3>
+<ul>
+  <li>brief (a few sentences per question) answers to questions
+  3-1</li>
+</ul>
+
+<p>The <code>pthread_cond_wait</code> operation takes a mutex as a
+parameter, and automatically/atomically releases it after putting the
+process to sleep, and reacquires it before allowing the process to
+resume.</p>
+
+<p>QUESTIONS 3-1</p>
+<ul>
+  <li>Why must the mutex be held when pthread_cond_wait is
+  called?</li>
+  <li>Why must the mutex be released when the waiting thread is
+  blocked?</li>
+  <li>Why must the mutex be reacquired when the calling thread
+  resumes?</li>
+  <li>Why must this be done inside of pthread_cond_wait?  Why can’t
+  the caller simply release the mutex before calling
+  pthread_cond_wait?</li>
+  <li>Can this be done in a user-mode implementation of
+  pthread_cond_wait?  If so, how?  If it can only be implemented by a
+  system call, explain why?</li>
+</ul>
+
+<h2>Part 4 – Design Problem – Artifact Correction</h2>
+
+<p>At the beginning of Questions 1-2 you explored a measurement
+artifact: an error in our time per operation computation that was
+introduced by the way in which we implemented the test driver.  In
+part 1 you used a large number of iterations to dilute the artifact
+per operation.  That isn’t a bad approach, but a better approach would
+be to eliminate the artifact (avoid measuring it, or find a way to
+subtract it from our results).</p>
+
+<p>Can you design and implement a change to the measurement program to
+eliminate this artifact?  Having done so, what data can you generate
+to testify to the elimination (or at least substantial reduction) of
+that artifact?</p>
+
+<p>If you choose to do this:</p>
+<ul>
+  <li>add a Part 4 in which you explain your approach.</li>
+  <li>add a <samp>--correct</samp> switch to your <code>addtest</code>
+  and <code>sltest</code> programs that enables your artifact
+  correction.</li>
+  <li>We will review your design and test the effectiveness of your
+  correction.</li>
+</ul>
+
+<hr>
+<address>
+ © 2016 Mark Kampe. All rights reserved.
+ See <a href="http://web.cs.ucla.edu/classes/winter16/cs111/copyright.html">copying rules</a>.<br>
+
+ $Id: lab4.html,v 1.3 2016/03/02 19:38:11 eggert Exp $
+
+</address>
+
+
+
+</body></html>

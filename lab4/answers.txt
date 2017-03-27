@@ -1,0 +1,209 @@
+Lab 4 Questions:
+
+Minimum number of threads/iterations it takes to result in failure:
+With 2 threads, it took about 1010 iterations for failure => 4040 operations
+With 3 threads, it took about 660 iterations => 3960 operations
+4 threads, 600 iterations => 4800 operations
+5 threads, 500 iterations => 5000 operations
+6 threads, 490 iterations => 6900 operations
+10 threads, 280 iterations => 5600 operations
+15, 400 => 12000 operations
+20, 450 => 18000 operations
+25, 400 => 20000 operations
+30, 400 => 24000 operations
+-----------------------------------------------
+QUESTION 1.1:
+1. 
+	If the number of iterations is high enough, one thread will not be done modifying the global variable counter by the time next thread starts. The add() function is a critical section, but the speed of calculation speed of calculation determines whether conflict will happen.
+2.
+	On a smaller number of iterations, there is a smaller probability of collision among threads, because each thread will be working on the counter for a short period of time. An earlier thread might already be done by the time the next thread is created and starts running.
+-----------------------------------------------
+After adding yield option, number of iterations/threads to result in failure:
+With 2 threads, it took about 100 iterations for failure => 400 operations
+3 threads, 90 iterations => 540 operations
+4 threads, 30 iterations => 240 operations
+5, 25 => 250 operations
+etc.
+Yes, it is a lot easier to cause failure with --yield
+
+Compare average execution time of yield and non-yield versions:
+ ./addtest --iter=50 --threads=20
+20 threads x 50 iterations x (add + subtract) = 2000 operations
+elapsed time: 661448 ns
+per operation: 330 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iter=50 --threads=20 --yield=1
+20 threads x 50 iterations x (add + subtract) = 2000 operations
+ERROR: final count = 315
+elapsed time: 714242 ns
+per operation: 357 ns
+
+./addtest --iter=1000 --threads=25
+25 threads x 1000 iterations x (add + subtract) = 50000 operations
+elapsed time: 783550 ns
+per operation: 15 ns
+[classnou@lnxsrv09 ~/Desktop/lab4]$ ./addtest --iter=1000 --threads=25 --yield=1
+25 threads x 1000 iterations x (add + subtract) = 50000 operations
+ERROR: final count = -723
+elapsed time: 2823135 ns
+per operation: 56 ns
+
+This confirms that using --yield is a lot slower.
+
+Graph average cost per operation (non-yield) vs iterations with single thread: see graph 1 of graphs.pdf
+
+--------------------------------------------------------
+QUESTION 1.2:
+1.
+	The overhead of thread creation is counted in the time, so as the number of iterations increases, less time proportionally goes to the creation/joining of threads.
+2.
+	By increasing the number of iterations, we converge on the actual correct cost which minimizes the effect of overhead time.
+3.
+	The extra time is going to pthread_yield(), which causes each thread to relinquish the CPU and yield to the next one. The thread then waits to be rescheduled. The overhead of this function increases the time.
+4.
+	No, it becomes harder to get valid timings because overhead is increased. It is harder to isolate just the time spent on the addition to counter operations.
+--------------------------------------------------------
+Confirm elimination of race conditions:
+./addtest --iter=10000 --threads=20 --sync=m --yield=1
+20 threads x 10000 iterations x (add + subtract) = 400000 operations
+elapsed time: 54019029 ns
+per operation: 135 ns
+
+ ./addtest --iter=10000 --threads=20 --sync=s --yield=1
+20 threads x 10000 iterations x (add + subtract) = 400000 operations
+elapsed time: 240646644 ns
+per operation: 601 ns
+
+./addtest --iter=10000 --threads=20 --sync=c --yield=1
+20 threads x 10000 iterations x (add + subtract) = 400000 operations
+elapsed time: 392003015 ns
+per operation: 980 ns
+
+The race condition is eliminated.
+
+Graph time per op for range of thread values: see graph 2 of graphs.pdf
+
+------------------------------------------------------
+QUESTION 1.3:
+1.
+	There are not many computations required to acquire locks when there is a low number of threads. Locking is cheap in this case, because there is no need to wait a long time to get a lock.
+2.
+	When lots of threads are trying to get a lock, overall wait time increases. Because there are more collisions with more threads, there is more waiting necessary.
+3.
+	Spin locks are a form of busy waiting, so threads have to keep running while they wait. This is more expensive than just blocking a thread.
+------------------------------------------------------
+------------------------------------------------------
+
+PART 2:
+Graph time per op for single thread, increasing number of iterations: see graph 3 of graphs.pdf
+
+-------------------------------------------------------
+QUESTION 2.1:
+As the number of iterations increases, the average time per operation decreases dramatically.
+Essentially, operations = iterations^2, since operations = 1 thread * iterations * 2 insert/lookup * iterations/(1 list).
+But for a small number of iterations, a large proportion of the time is spent on overhead of locking mutex and unlocking or waiting for them to open, thread creation, and thread joining rather than actual operations.
+Increasing the number of iterations corrects for this effect and produces more accurate results.
+------------------------------------------------------
+
+Number of threads and iterations to generate a problem:
+1 thread => no problems
+With 2 threads => 60 iterations results in either segfault or the program hanging, most of the time.
+3 threads => 3 iterations for failure
+Any number of threads exceeding 3 => 2 iterations results in failure most of the time.
+
+
+Number of threads/iterations to cause failure with
+yield=i:
+2 threads => 15 iterations
+3 threads => 3 iterations
+Any number of threads exceeding 3 => 2 iterations
+
+yield=d:
+2 threads => 12 iterations
+3 threads => 3 iterations
+Exceeding 3 => 2 iterations
+
+yield=s:
+2 threads => 10 iterations
+>=3 threads => 2 iterations
+
+yield=id:
+2 threads => 6 iterations
+>= 3 threads => 3 iterations
+
+yield=is:
+2 threads => 6 iterations
+>= 3 threads => 3 iterations
+
+yield=ds:
+2 threads => 6 iterations
+>= 3 threads => 3 iterations
+
+yield=ids:
+>= 2 threads => 3 iterations
+
+Demonstrate elimination of race conditions using yield, with either locking mechanism:
+./sltest --threads=50 --iterations=1000 --sync=m --yield=i
+50 threads x 1000 iterations x (ins + lookup/del) x (1000/2 avg len)= 50000000 operations
+elapsed time: 158188367 ns
+per operation: 3 ns
+
+./sltest --threads=50 --iterations=1000 --sync=m --yield=d
+50 threads x 1000 iterations x (ins + lookup/del) x (1000/2 avg len)= 50000000 operations
+elapsed time: 158867224 ns
+per operation: 3 ns
+
+./sltest --threads=50 --iterations=1000 --sync=m --yield=s
+50 threads x 1000 iterations x (ins + lookup/del) x (1000/2 avg len)= 50000000 operations
+elapsed time: 156356992 ns
+per operation: 3 ns
+
+./sltest --threads=50 --iterations=1000 --sync=s --yield=i
+50 threads x 1000 iterations x (ins + lookup/del) x (1000/2 avg len)= 50000000 operations
+elapsed time: 542263246 ns
+per operation: 10 ns
+
+./sltest --threads=50 --iterations=1000 --sync=s --yield=d
+50 threads x 1000 iterations x (ins + lookup/del) x (1000/2 avg len)= 50000000 operations
+elapsed time: 380338173 ns
+per operation: 7 ns
+
+./sltest --threads=50 --iterations=1000 --sync=s --yield=s
+50 threads x 1000 iterations x (ins + lookup/del) x (1000/2 avg len)= 50000000 operations
+elapsed time: 369234977 ns
+per operation: 7 ns
+Conclusion: The race condition has been eliminated using both sync=s and sync=m
+
+Run without yields, choosing high number of iterations, compare execution times for unprotected (1 thread) vs both protected versions
+=> graph (corrected) per operation times for unprotected, mutex, spin vs thread count: see graph4 of graphs.pdf
+
+--------------------------------------------------
+QUESTION 2.2:
+The time per protected is nearly constant for any number of threads for Part 2. But for Part 1, the time per protected increases as the number of threads increases.
+For part 2, operations is larger per thread, so since the amount of time each thread is going to hold the protected time is incrementally larger, more of the threads end up waiting because each thread that gains the lock does more work.
+Part of the reason? Threads don't make a difference in overall time.
+--------------------------------------------------
+
+Run all three versions(unprotected, mutex, spin) without yields for a range of --list=values, (unprotected only for single thread).
+Graph per operation time (each three) vs threads/lists ratio: see graph5 of graphs.pdf
+
+--------------------------------------------------
+QUESTION 2.3:
+1. For the mutex version, the per-operation time does not change for different threads/list. It stays at around 2-4ns. But for the spinlock version, the per-op time increases as threads/lists increases.
+Each sublist has its own synchronization mechanism, ie mutex or spinlock.
+
+2. Explain why threads per list is more interesting than threads.
+Each thread could, at any moment, lock a list because it is trying to add to the list, and
+the more lists there are, the higher the chance that it will happen. So locking will slow
+it down and more and more threads will choose a certain list and start to add to it.
+The lower this ratio, the better performance is.
+--------------------------------------------------
+--------------------------------------------------
+
+PART 3:
+
+QUESTION3-1:
+1. pthread_cond_wait puts a process to sleep onto a queue and releases the mutex on the conditional variable, so the process must already be holding the mutex. It can't release a mutex that it isn't currently holding.
+2. The mutex is meant to protect access to the conditional variable and must be released so that other processes can modify it. Not releasing the mutex could result in deadlock, since the next process that is woken up cannot change the conditional variable and signal to another blocked processes to proceed once it is finished.
+3. The current thread must reacquire the mutex so it can change the conditional variable that the mutex is protecting. Otherwise, once it is finished, it cannot signal to other threads whether they can wake up and do work.
+4. pthread_cond_wait must be atomic, so that no changes to the condition protected by the mutex can be made until the current thread is asleep. Otherwise, another thread might modify the condition after the mutex is released but before the caller thread is blocked. This could result in deadlock, with the caller thread stuck on the wait queue.
+5. It can only be implemented by a system call because it must be atomic. Any user-implemented version could be interrupted. A non-atomic user-implemented version could result in lost wake-up signals. Releasing the mutex allows another thread to wake up and execute, and before the current thread blocks, this other thread could finish and call pthread_cond_signal to wake up blocked threads before the caller thread is even asleep. This results in a lost wake-up call. The caller thread will block forever because the other thread sent the wake-up call in between the mutex release and the blocking, before the first thread was even asleep.
